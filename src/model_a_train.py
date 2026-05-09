@@ -38,7 +38,6 @@ from scipy.stats            import mode
 try:
     from cuml.cluster       import KMeans       as cuKMeans       # noqa: F811
     from cuml.svm           import LinearSVC    as cuSVC          # noqa: F811
-    from cuml.semi_supervised import LabelPropagation as cuLP     # noqa: F811
     import cupy as cp
     GPU = True
     print("[INFO] cuML detected — GPU mode active.")
@@ -227,21 +226,11 @@ def train_semi_supervised(X_train, y_train, X_val, y_val, labeled_frac=0.10):
     print(f"\n  Labeled samples  : {(~unlabeled).sum()} ({labeled_frac*100:.0f}%)")
     print(f"  Unlabeled samples: {unlabeled.sum()}")
 
-    ## -- GPU SECTION C (replace with cuLP on Colab T4) --
+    ## Label Propagation does not exist in cuML, so we always run it on CPU (sklearn)
     t0 = time.time()
-    if GPU:
-        import cupy as cp
-        lp = cuLP(max_iter=1000)
-        lp.fit(cp.asarray(X_sub.astype("float32")),
-               cp.asarray(y_semi.astype("float32")))
-        y_pred_lp = cp.asnumpy(lp.predict(
-            cp.asarray(X_val.astype("float32"))))
-    else:
-        lp = LabelPropagation(kernel="knn", n_neighbors=7, max_iter=1000,
-                               n_jobs=-1)
-        lp.fit(X_sub, y_semi)
-        y_pred_lp = lp.predict(X_val)
-    ## -- END GPU SECTION C --
+    lp = LabelPropagation(kernel="knn", n_neighbors=7, max_iter=1000, n_jobs=-1)
+    lp.fit(X_sub, y_semi)
+    y_pred_lp = lp.predict(X_val)
     print(f"  Trained in {time.time()-t0:.1f}s")
 
     result = eval_binary(f"Label Propagation ({int(labeled_frac*100)}% labels)",
