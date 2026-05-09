@@ -156,10 +156,13 @@ def load_w2v():
         return None
     from gensim.models import KeyedVectors
     print(f"  [W2V] Loading from {W2V_PATH} ...")
-    t0 = time.time()
-    w2v = KeyedVectors.load(W2V_PATH)
-    print(f"  [W2V] Loaded {len(w2v):,} vectors in {time.time()-t0:.1f}s")
-    return w2v
+    try:
+        w2v = KeyedVectors.load(W2V_PATH)
+        print(f"  [W2V] Loaded {len(w2v):,} vectors in {time.time()-t0:.1f}s")
+        return w2v
+    except Exception as e:
+        print(f"  [W2V] Failed to load model files: {e}")
+        return None
 
 
 def download_w2v():

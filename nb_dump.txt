@@ -1,0 +1,102 @@
+
+--- CELL 0 ---
+# RACE RC & Quiz Generation - Colab GPU Training
+This notebook implements the GPU-accelerated components of the project.import os
+os.makedirs(f'{MODEL_DIR}/model_a/traditional', exist_ok=True)
+os.makedirs(f'{MODEL_DIR}/model_b/traditional', exist_ok=True)
+
+--- CELL 1 ---
+# ?? Colab GPU Setup ??????????????????????????????????????????????????
+!pip install cuml-cu12 cudf-cu12 --extra-index-url https://pypi.nvidia.com
+!pip install gensim
+
+import cupy as cp
+from cuml.cluster import KMeans as cuKMeans
+from cuml.svm import LinearSVC as cuSVC
+from cuml.linear_model import LogisticRegression as cuLR
+import gensim.downloader as api
+import joblib, numpy as np
+
+# Mount Drive to persist models
+from google.colab import drive
+drive.mount('/content/drive')
+MODEL_DIR = '/content/drive/MyDrive/race_rc_project/models'
+DATA_DIR  = '/content/drive/MyDrive/race_rc_project/data/processed'
+
+--- CELL 2 ---
+# ?? GPU SECTION A: SVM via cuML ??????????????????????????????????????
+import cupy as cp
+from cuml.svm import LinearSVC as cuSVC
+import joblib
+
+data = joblib.load(f'{DATA_DIR}/train_features.pkl')
+X_train = data['X']
+y_train = data['y']
+
+X_gpu = cp.asarray(X_train.astype('float32'))
+y_gpu = cp.asarray(y_train.astype('float32'))
+
+svm_gpu = cuSVC(class_weight='balanced', C=0.5, max_iter=2000)
+svm_gpu.fit(X_gpu, y_gpu)
+
+X_val_gpu = cp.asarray(joblib.load(f'{DATA_DIR}/val_features.pkl')['X'].astype('float32'))
+y_val     = joblib.load(f'{DATA_DIR}/val_features.pkl')['y']
+y_pred    = cp.asnumpy(svm_gpu.predict(X_val_gpu))
+
+from sklearn.metrics import accuracy_score, f1_score
+print(f"SVM Accuracy: {accuracy_score(y_val, y_pred):.4f}")
+print(f"SVM Macro F1: {f1_score(y_val, y_pred, average='macro'):.4f}")
+
+joblib.dump(svm_gpu, f'{MODEL_DIR}/model_a/traditional/svm_gpu.pkl')
+
+--- CELL 3 ---
+# ?? GPU SECTION B: KMeans via cuML ???????????????????????????????????
+from cuml.cluster import KMeans as cuKMeans
+from sklearn.metrics import silhouette_score
+import cupy as cp
+
+X_gpu = cp.asarray(X_train.astype('float32'))
+km = cuKMeans(n_clusters=4, random_state=42, max_iter=300)
+km.fit(X_gpu)
+labels_np = cp.asnumpy(km.labels_)
+
+sample_idx = np.random.choice(len(labels_np), 5000, replace=False)
+sil = silhouette_score(X_train[sample_idx], labels_np[sample_idx])
+print(f"KMeans Silhouette Score: {sil:.4f}")
+
+joblib.dump({'labels': labels_np, 'centers': cp.asnumpy(km.cluster_centers_)},
+            f'{MODEL_DIR}/model_a/traditional/kmeans.pkl')
+
+--- CELL 4 ---
+# ?? GPU SECTION C: Label Propagation ?????????????????????????????????
+from sklearn.semi_supervised import LabelPropagation
+
+SUBSET = 10000
+X_sub = X_train[:SUBSET].astype('float32')
+y_sub = y_train[:SUBSET].copy()
+
+rng = np.random.RandomState(42)
+unlabeled = rng.rand(SUBSET) > 0.10
+y_semi = y_sub.copy()
+y_semi[unlabeled] = -1
+
+
+lp = LabelPropagation(kernel='knn', n_neighbors=7, max_iter=1000, n_jobs=-1)
+lp.fit(X_sub, y_semi)
+
+labeled_mask = ~unlabeled
+y_pred_lp = lp.predict(X_sub[labeled_mask])
+from sklearn.metrics import f1_score
+f1_lp = f1_score(y_sub[labeled_mask], y_pred_lp, average='macro')
+print(f"Label Propagation Macro F1 (10% labels): {f1_lp:.4f}")
+
+joblib.dump(lp, f'{MODEL_DIR}/model_a/traditional/label_prop.pkl')
+
+--- CELL 5 ---
+# ?? GPU SECTION D: Word2Vec Loading & Nearest-Neighbour Search ???????
+import gensim.downloader as api
+import joblib, numpy as np
+
+w2v = api.load('word2vec-google-news-300')
+w2v.save(f'{MODEL_DIR}/model_b/traditional/w2v.kv')
+print(f"W2V vocab size: {len(w2v):,}")
