@@ -46,22 +46,25 @@ def _load_models():
     if _models:
         return _models
 
-    _models["vocab"]    = joblib.load(os.path.join(PROC, "ohe_vocab.pkl"))
+    # Using mmap_mode='r' to save RAM on low-memory systems
+    _models["vocab"]    = joblib.load(os.path.join(PROC, "ohe_vocab.pkl"), mmap_mode='r')
 
     # Model A
-    _models["lr"]       = joblib.load(os.path.join(MDIR_A, "lr.pkl"))
-    _models["ensemble"] = joblib.load(os.path.join(MDIR_A, "ensemble.pkl"))
+    _models["lr"]       = joblib.load(os.path.join(MDIR_A, "lr.pkl"), mmap_mode='r')
+    _models["ensemble"] = joblib.load(os.path.join(MDIR_A, "ensemble.pkl"), mmap_mode='r')
     try:
-        _models["scaler"] = joblib.load(os.path.join(MDIR_A, "scaler.pkl"))
+        _models["scaler"] = joblib.load(os.path.join(MDIR_A, "scaler.pkl"), mmap_mode='r')
     except Exception:
         print("[WARN] scaler.pkl not found. Falling back to unscaled features.")
         _models["scaler"] = None
 
     # Model B
-    _models["dist_lr"]  = joblib.load(os.path.join(MDIR_B, "distractor_lr.pkl"))
-    _models["hint_lr"]  = joblib.load(os.path.join(MDIR_B, "hint_lr.pkl"))
-    _models["w2v"]      = load_w2v()   # returns None if not downloaded
-
+    _models["dist_lr"]  = joblib.load(os.path.join(MDIR_B, "distractor_lr.pkl"), mmap_mode='r')
+    _models["hint_lr"]  = joblib.load(os.path.join(MDIR_B, "hint_lr.pkl"), mmap_mode='r')
+    
+    # Word2Vec is too large (3.6GB) for low-RAM laptops. Disabling by default for UI stability.
+    _models["w2v"]      = None 
+    
     return _models
 
 
