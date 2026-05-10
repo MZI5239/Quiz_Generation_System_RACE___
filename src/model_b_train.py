@@ -294,7 +294,14 @@ def get_ml_hints(article: str, question: str, hint_lr, n: int = 3) -> list:
         feat_rows.append([kw_overlap, pos_score, len_score])
 
     X = np.array(feat_rows, dtype=np.float32)
-    probs  = hint_lr.predict_proba(X)[:, 1]
+    # Robust handling for both Regression and Classification models
+    if hasattr(hint_lr, "predict_proba"):
+        probs = hint_lr.predict_proba(X)[:, 1]
+    else:
+        probs = hint_lr.predict(X)
+        # Normalize to 0-1 range if it's a raw regression score
+        if probs.max() > 1.0 or probs.min() < 0.0:
+            probs = (probs - probs.min()) / (probs.max() - probs.min() + 1e-9)
     ranked = sorted(zip(sents, probs), key=lambda x: x[1], reverse=True)
     return [s for s, _ in ranked[:n]][::-1]   # least → most explicit
 
