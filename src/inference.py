@@ -51,6 +51,11 @@ def _load_models():
     # Model A
     _models["lr"]       = joblib.load(os.path.join(MDIR_A, "lr.pkl"))
     _models["ensemble"] = joblib.load(os.path.join(MDIR_A, "ensemble.pkl"))
+    try:
+        _models["scaler"] = joblib.load(os.path.join(MDIR_A, "scaler.pkl"))
+    except Exception:
+        print("[WARN] scaler.pkl not found. Falling back to unscaled features.")
+        _models["scaler"] = None
 
     # Model B
     _models["dist_lr"]  = joblib.load(os.path.join(MDIR_B, "distractor_lr.pkl"))
@@ -145,10 +150,17 @@ def predict(article: str, question: str,
 
     for opt_label, opt_text in opt_texts.items():
         feat = _build_verify_features(article, question, opt_text, vocab)
+        
+        # Apply scaling before prediction if scaler available
+        if m["scaler"]:
+            feat_scaled = m["scaler"].transform(feat)
+        else:
+            feat_scaled = feat
+        
         try:
-            prob = m["ensemble"].predict_proba(feat)[0][1]
+            prob = m["ensemble"].predict_proba(feat_scaled)[0][1]
         except Exception:
-            prob = float(m["lr"].predict_proba(feat)[0][1])
+            prob = float(m["lr"].predict_proba(feat_scaled)[0][1])
         scores[opt_label] = round(float(prob), 4)
 
     predicted_answer = max(scores, key=scores.get)

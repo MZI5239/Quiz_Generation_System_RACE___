@@ -89,7 +89,30 @@ def get_distractor_candidates_ohe(article: str, correct_answer: str,
                   if (s, sc) not in band and sc < 0.90]
         band += extras
 
-    return [s for s, _ in band[:n]]
+    # Selection with Diversity Penalty (Rubric Requirement 5.4)
+    final = []
+    for s, sc in band:
+        if len(final) >= n:
+            break
+        s_tokens = set(tokenize(s))
+        # Penalty: avoid candidates that share >60% tokens with already selected ones
+        too_similar = False
+        for existing in final:
+            ex_tokens = set(tokenize(existing))
+            overlap = len(s_tokens & ex_tokens) / max(len(s_tokens), 1)
+            if overlap > 0.6:
+                too_similar = True
+                break
+        if not too_similar:
+            final.append(s)
+            
+    # Fallback if diversity was too strict
+    if len(final) < n:
+        for s, sc in band:
+            if len(final) >= n: break
+            if s not in final: final.append(s)
+
+    return final
 
 
 def build_distractor_training_data(df: pd.DataFrame, vocab: dict,

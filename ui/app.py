@@ -214,7 +214,11 @@ elif screen_selection == "4. Developer Dashboard":
         df_hist = pd.DataFrame(st.session_state.history)
         st.table(df_hist)
         
-        if st.button("📥 Export Session to CSV"):
-            df_hist.to_csv("session_log.csv", index=False)
-            st.success("Log saved to session_log.csv")
+        csv = df_hist.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Session Logs (CSV)",
+            data=csv,
+            file_name="race_quiz_session_log.csv",
+            mime="text/csv",
+        )
 
