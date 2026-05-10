@@ -57,8 +57,17 @@ race_rc_project/
 3. **Fixed Colab CUDA Environment**: Changed pip installs in the Colab notebook to use `cuml-cu12` and `cudf-cu12` because Colab defaults to CUDA 12. `cupy-cuda11x` was removed as it clashes with built-in memory allocators.
 4. **Git Large File Restrictions**: The `.pkl` files and `w2v.kv` are massive. They are aggressively ignored in `.gitignore` to prevent `fatal: remote end hung up` errors during GitHub pushes.
 5. **Directory Creation in Colab**: `joblib.dump` fails if parent directories don't exist in Google Drive. Added `os.makedirs(..., exist_ok=True)` directly in the notebook to auto-create `models/model_a/traditional/` and `models/model_b/traditional/` inside Drive before saving.
+6. **Python Versioning & Dependencies**: The project requires `py -3.12` to access the `gensim` environment. Key missing dependencies (`nltk`, `rouge-score`) have been added to `requirements.txt`.
+7. **RAM & Error Handling**: Robust `try-except` blocks were added to `load_w2v` to handle "Unable to allocate RAM" errors for the 3.6GB Word2Vec model, falling back to OHE distractors gracefully.
 
-## 5. Current Hybrid Execution Workflow
+## 5. Milestone Completion Status (Current: 95%)
+- **Week 1 (EDA, Preprocessing, Model A)**: 100% DONE.
+- **Week 2, Days 1-2 (Unsupervised/Semi-Supervised)**: 100% DONE.
+- **Week 2, Day 3 (Ensemble & Distractors)**: 100% DONE.
+- **Week 2, Day 4 (UI Development & Hint Scorer)**: 100% DONE.
+- **Week 2, Day 5 (Evaluation & Submission)**: 90% DONE (Metrics generated, User needs to export PDF/Video).
+
+## 6. Current Hybrid Execution Workflow
 If the user asks how to run this project, instruct them to follow this exact pipeline:
 1. **Local**: Push code to GitHub. Upload `data/processed/*.pkl` to Google Drive.
 2. **Colab**: Open `notebooks/experiments.ipynb` directly from GitHub inside Colab. Run on a T4 GPU. The notebook reads data from Google Drive and saves models (`svm_gpu.pkl`, `kmeans.pkl`) directly back to Google Drive.
