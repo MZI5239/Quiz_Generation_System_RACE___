@@ -182,7 +182,8 @@ elif screen_selection == "3. Hint Panel":
         if st.session_state.hints_shown >= len(hints):
             st.divider()
             if st.button("🎁 Reveal Final Answer"):
-                st.warning(f"The correct answer is: {res['predicted_answer_text']}")
+                ans_text = res.get("predicted_answer_text", res.get("predicted_answer", "Unknown"))
+                st.warning(f"The correct answer is: {ans_text}")
         else:
             st.caption(f"Use {len(hints) - st.session_state.hints_shown} more hint(s) to unlock the final answer.")
 
