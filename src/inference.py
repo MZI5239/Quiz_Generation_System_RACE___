@@ -89,24 +89,31 @@ def _build_verify_features(article, question, option, vocab):
 
 
 def _generate_question_template(article, correct_answer):
-    """Simple Wh-word template question generator."""
-    TEMPLATES = [
-        "What is {answer}?",
-        "What do you know about {answer}?",
-        "Who is {answer}?",
-        "Where does the passage mention {answer}?",
-        "Why is {answer} significant in the passage?",
-    ]
-    first = correct_answer.strip().lower().split()[0] if correct_answer.strip() else ""
-    if first in ("he", "she", "they", "his", "her"):
-        tpl = TEMPLATES[2]
-    elif first in ("where", "in", "at", "on", "near"):
-        tpl = TEMPLATES[3]
-    elif first in ("because", "since", "due"):
-        tpl = TEMPLATES[4]
-    else:
-        tpl = TEMPLATES[0]
-    return tpl.format(answer=correct_answer)
+    """Smarter Wh-word template question generator using rule-based selection."""
+    ans = correct_answer.strip()
+    if not ans:
+        return "What is the main idea of the passage?"
+    
+    first = ans.lower().split()[0]
+    tpl = "What is {answer}?" # Default
+
+    # Rule-based template selection
+    if first in ["he", "she", "they", "who", "it", "mr.", "mrs.", "dr.", "his", "her"]:
+        tpl = "Who is {answer}?"
+    elif first in ["in", "at", "on", "where", "near", "from", "to"] and len(ans.split()) > 1:
+        # Check if it looks like a place or time (contains digits)
+        if any(char.isdigit() for char in ans):
+            tpl = "When did {answer} take place?"
+        else:
+            tpl = "Where is {answer} mentioned?"
+    elif first in ["because", "since", "due", "why"]:
+        tpl = "Why is {answer} significant?"
+    elif first in ["by", "how", "through"]:
+        tpl = "How is {answer} achieved?"
+    elif len(ans.split()) > 4:
+        tpl = "What happened when {answer}?"
+    
+    return tpl.format(answer=ans)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
