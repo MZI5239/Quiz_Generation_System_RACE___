@@ -173,12 +173,13 @@ def predict(article: str, question: str,
     elapsed_ms = round((time.time() - t_start) * 1000, 1)
 
     return {
-        "predicted_answer":  predicted_answer,
-        "generated_question": generated_q,
-        "distractors":        distractors,
-        "hints":              hints,           # [Hint1, Hint2, Hint3]
-        "scores":             scores,
-        "inference_time_ms":  elapsed_ms,
+        "predicted_answer":      predicted_answer,
+        "predicted_answer_text": correct_text,
+        "generated_question":    generated_q,
+        "distractors":           distractors,
+        "hints":                 hints,           # [Hint1, Hint2, Hint3]
+        "scores":                scores,
+        "inference_time_ms":     elapsed_ms,
     }
 
 
