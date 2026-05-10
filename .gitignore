@@ -3,4 +3,5 @@ data/processed/*.pkl
 data/processed/*.csv
 models/**/*.pkl
 models/**/*.kv
+models/**/*.npy
 __pycache__/
