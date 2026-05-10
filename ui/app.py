@@ -140,11 +140,14 @@ elif screen_selection == "2. Q&A Quiz View":
                                format_func=lambda x: f"{x}: {display_opts[x]}")
         
         if st.button("🎯 Check Correctness"):
-            correct_label = "A" # Default for logic if text match needed
-            # Find which label matches the predicted answer text
-            for k, v in display_opts.items():
-                if v == res["predicted_answer_text"]:
-                    correct_label = k
+            # Robust logic: Try to find correct label via text match, fallback to label match
+            correct_label = res.get("predicted_answer", "A") 
+            correct_text  = res.get("predicted_answer_text", "")
+            
+            if correct_text:
+                for k, v in display_opts.items():
+                    if v == correct_text:
+                        correct_label = k
             
             if user_choice == correct_label:
                 st.balloons()
