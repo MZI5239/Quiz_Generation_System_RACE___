@@ -187,7 +187,7 @@ elif screen_selection == "2. Q&A Quiz View":
     if scores:
         with st.expander("📊 Model A Confidence Scores (per option)"):
             score_df = pd.DataFrame({"Option": list(scores.keys()), "Score": list(scores.values())})
-            st.dataframe(score_df, use_container_width=True)
+            st.dataframe(score_df, width='stretch')
 
 # =============================================================================
 # SCREEN 3 — Hint Panel (Graduated, Progressive)
@@ -266,7 +266,7 @@ elif screen_selection == "4. Analytics Dashboard":
         "Precision": [0.53, 0.53, 0.50, 0.56],
         "Recall":    [0.54, 0.54, 0.50, 0.75],
     })
-    st.dataframe(comparison, use_container_width=True)
+    st.dataframe(comparison, width='stretch')
 
     st.markdown("---")
     st.subheader("⚡ Session Performance")
@@ -284,7 +284,7 @@ elif screen_selection == "4. Analytics Dashboard":
 
         st.subheader("📜 Session Logs")
         df_hist = pd.DataFrame(st.session_state.history)
-        st.dataframe(df_hist, use_container_width=True)
+        st.dataframe(df_hist, width='stretch')
 
         csv = df_hist.to_csv(index=False).encode("utf-8")
         st.download_button(
